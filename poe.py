@@ -72,32 +72,35 @@ class HistSet(list):
             self.add(e)
 
 
-def get_sets(a: np.ndarray):
+def get_sets(a: np.ndarray, toplevel=False):
     if a.size == 1:
         return HistSet([HistNum(a[0])])
 
     split = a.size // 2
     if a.size > 30:
         split = math.ceil(a.size / 10)
-    print('Entering {}'.format(a.size))
 
-    s1 = get_sets(a[:split])
     s2 = get_sets(a[split:])
+    s1 = get_sets(a[:split])
 
     t = time.time()
 
     # res = HistSet([p + q for (p, q) in itertools.product(s1, s2) if p + q <= maxv])
     for (p, q) in itertools.product(s1, s2):
-        if p + q is not None:
+        if toplevel:
+            if p.v + q.v != 40:
+                continue
+        if p.v + q.v <= 40:
             s1.add(p + q)
     s1.union_with_history(s2)
-    print('Merged in {}s'.format(time.time() - t))
 
-    print('Finished {}'.format(a.size))
+    dt = time.time() - t
+    if dt > .05:
+        print('Layer {} Merged in {}s'.format(a.size, dt))
     return s1
 
 
-z = get_sets(a)
+z = get_sets(a, True)
 print(a)
 print(z)
 
@@ -111,13 +114,13 @@ if num40 is None:
     print('No formation of 40 =(')
     exit(0)
 
-print('Solutions:')
-for hist in num40.histories:
-    ixs = np.where(hist)[0]
-    c = []
-    for i in ixs:
-        for j in range(hist[i]):
-            c.append(i + 1)
-    print(c)
+# print('Solutions:')
+# for hist in num40.histories:
+#     ixs = np.where(hist)[0]
+#     c = []
+#     for i in ixs:
+#         for j in range(hist[i]):
+#             c.append(i + 1)
+#     print(c)
 
 print('{} solutions found'.format(len(num40.histories)))
