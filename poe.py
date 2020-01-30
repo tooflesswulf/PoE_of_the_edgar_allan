@@ -1,10 +1,13 @@
 import numpy as np
 import itertools
 from functools import total_ordering
+import math
+import time
 
 MAXNUM = 40
 # a = np.array([1, 1, 10, 10, 10, 10, 19, 19])
-a = np.random.randint(1, MAXNUM, 30)
+a = np.random.randint(1, MAXNUM, 90)
+a.sort()
 
 
 @total_ordering
@@ -73,17 +76,24 @@ def get_sets(a: np.ndarray):
     if a.size == 1:
         return HistSet([HistNum(a[0])])
 
-    half = a.size // 2
+    split = a.size // 2
+    if a.size > 30:
+        split = math.ceil(a.size / 10)
+    print('Entering {}'.format(a.size))
 
-    s1 = get_sets(a[:half])
-    s2 = get_sets(a[half:])
+    s1 = get_sets(a[:split])
+    s2 = get_sets(a[split:])
+
+    t = time.time()
 
     # res = HistSet([p + q for (p, q) in itertools.product(s1, s2) if p + q <= maxv])
     for (p, q) in itertools.product(s1, s2):
         if p + q is not None:
             s1.add(p + q)
     s1.union_with_history(s2)
+    print('Merged in {}s'.format(time.time() - t))
 
+    print('Finished {}'.format(a.size))
     return s1
 
 
