@@ -6,7 +6,8 @@ import time
 
 MAXNUM = 40
 # a = np.array([1, 1, 10, 10, 10, 10, 19, 19])
-a = np.random.randint(1, MAXNUM, 90)
+a = np.random.randint(5, 25, 90)
+# a = np.random.randint(1, MAXNUM, 90)
 a.sort()
 
 
@@ -31,7 +32,6 @@ class HistNum:
         new.histories = []
         for (h1, h2) in itertools.product(self.histories, ot.histories):
             new.add_history(h1 + h2)
-        # new.histories = heapq.merge(self.histories, ot.hist)
         return new
 
     def __or__(self, other):
@@ -72,22 +72,26 @@ class HistSet(list):
             self.add(e)
 
 
-def get_sets(a: np.ndarray, toplevel=False):
+def get_sets(a: np.ndarray, toplevel=True):
     if a.size == 1:
         return HistSet([HistNum(a[0])])
 
     split = a.size // 2
     if a.size > 30:
         split = math.ceil(a.size / 10)
+    if toplevel:  # if top level, we split 'small' numbers from bigger. Runs much much faster.
+        split = np.count_nonzero(a < (MAXNUM / 10))
+    if split == 0:
+        split = 1
 
-    s2 = get_sets(a[split:])
-    s1 = get_sets(a[:split])
+    s2 = get_sets(a[split:], False)
+    s1 = get_sets(a[:split], False)
 
     t = time.time()
 
     # res = HistSet([p + q for (p, q) in itertools.product(s1, s2) if p + q <= maxv])
     for (p, q) in itertools.product(s1, s2):
-        if toplevel:
+        if toplevel:  # TODO: replace with linear loop for {s1 + s2} = 40
             if p.v + q.v != 40:
                 continue
         if p.v + q.v <= 40:
@@ -96,12 +100,22 @@ def get_sets(a: np.ndarray, toplevel=False):
 
     dt = time.time() - t
     if dt > .05:
-        print('Layer {} Merged in {}s'.format(a.size, dt))
+        print('Subcall size {} Merged in {}s'.format(a.size, dt))
     return s1
 
+    # s = HistSet([HistNum(a[-1])])
+    # a = a[:-1]
+    #
+    # for v in a[::-1]:
+    #     for si in s:
+    #         if si.v + v <= 40:
+    #             s.add(si + HistNum(v))
+    #     s.add(HistNum(v))
+    # return s
 
-z = get_sets(a, True)
+
 print(a)
+z = get_sets(a)
 print(z)
 
 num40 = None
